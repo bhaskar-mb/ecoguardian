@@ -1,0 +1,8 @@
+{
+  "name": "EcoGuardian",
+  "description": "An advanced environmental and wildlife governance platform that uses computer vision and neural synthesis to automatically monitor and protect natural habitats.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
