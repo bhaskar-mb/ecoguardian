@@ -8,9 +8,13 @@ import SystemInsights from './components/SystemInsights.tsx';
 import Resources from './components/Resources.tsx';
 import ChatSentinel from './components/ChatSentinel.tsx';
 import AdminDashboard from './components/AdminDashboard.tsx';
-import IntercomChat from './components/IntercomChat.tsx';
+import DatabaseViewer from './components/DatabaseViewer.tsx';
+import Leaderboard from './components/Leaderboard.tsx';
+
 import EnvironmentalAnalytics from './components/EnvironmentalAnalytics.tsx';
 import { User, Report, Severity, IncidentType, ReportStatus, TimelineEvent, Alert } from './types.ts';
+import { logoutUser, getAuthHeader } from './services/authService.ts';
+import { ShieldAlert } from 'lucide-react';
 
 const AUTHORITIES = [
   "Forestry Commission", 
@@ -33,33 +37,40 @@ const INITIAL_ALERTS: Alert[] = [
     severity: 'critical',
     timestamp: new Date(),
     isRead: false
-  },
-  {
-    id: 'A-002',
-    title: 'System Maintenance',
-    message: 'EcoGuardian sentinel network will undergo maintenance at 02:00 UTC.',
-    severity: 'info',
-    timestamp: new Date(Date.now() - 3600000),
-    isRead: true
   }
 ];
 
 const INITIAL_REPORTS: Report[] = [
   {
-    id: 'R-902',
+    id: 'R-1775541712358',
+    reportNumber: 1,
     type: IncidentType.ILLEGAL_LOGGING,
-    severity: Severity.HIGH,
-    description: 'Fresh tree stumps and heavy tire marks detected in the protected buffer zone.',
-    location: { lat: 45.523, lng: -122.676, address: "Northern Ridge Biosphere, Sector 7" },
+    severity: Severity.CRITICAL,
+    description: 'Fresh illegal felling detected in the deep wooded area.',
+    location: { lat: 45.523, lng: -122.676, address: "Nandyal, Industrial Sector" },
     timestamp: new Date(Date.now() - 7200000),
     imageUrl: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&q=80&w=800',
     status: 'assigned',
     reporterId: 'user-001',
     assignedAuthorityId: 'Forestry Commission',
-    aiInsights: 'Vision analysis confirms recent logging activity in a restricted zone.',
     timeline: [
-      { status: 'pending', timestamp: new Date(Date.now() - 7200000), message: 'Incident reported by Sentinel.', actor: 'John Sentinel' },
-      { status: 'assigned', timestamp: new Date(Date.now() - 3600000), message: 'Admin assigned case to Forestry Commission.', actor: 'Chief Warden' }
+      { status: 'pending', timestamp: new Date(Date.now() - 7200000), message: 'Incident reported. Dispatched to Global Command for triage.', actor: 'JAS' },
+      { status: 'assigned', timestamp: new Date(Date.now() - 3600000), message: 'Central Command assigned this anomaly to Forestry Commission.', actor: 'ADMIN' }
+    ]
+  },
+  {
+    id: 'R-1775541712359',
+    reportNumber: 2,
+    type: IncidentType.LAND_DAMAGE,
+    severity: Severity.HIGH,
+    description: 'Unexplained excavation detected on rural site.',
+    location: { lat: 45.512, lng: -122.658, address: "Kurnool, Rural Sector" },
+    timestamp: new Date(Date.now() - 3600000),
+    imageUrl: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800',
+    status: 'pending',
+    reporterId: 'user-002',
+    timeline: [
+      { status: 'pending', timestamp: new Date(Date.now() - 3600000), message: 'Incident reported. Dispatched to Global Command for triage.', actor: 'Sentinel AI' }
     ]
   }
 ];
@@ -91,10 +102,18 @@ const App: React.FC = () => {
       try {
         const res = await fetch('http://localhost:5000/api/reports');
         const data = await res.json();
-        setReports(data);
+        if (data && data.length > 0) {
+          // Final safety: ensure every report has a number based on its position if missing
+          const sanitized = data.map((r: any, idx: number) => ({
+            ...r,
+            reportNumber: r.reportNumber || (data.length - idx)
+          }));
+          setReports(sanitized);
+        } else {
+          setReports(INITIAL_REPORTS);
+        }
       } catch (err) {
         console.error("Failed to fetch reports:", err);
-        // Fallback to initial data if DB fails
         setReports(INITIAL_REPORTS);
       }
     };
@@ -103,7 +122,13 @@ const App: React.FC = () => {
 
     // Listen for Real-time Updates
     socket.on('newReport', (newReport: Report) => {
-      setReports(prev => [newReport, ...prev]);
+      setReports(prev => {
+        // Prevent duplication if the report was already added locally
+        const exists = prev.some(r => (r._id && r._id === newReport._id) || (r.id && r.id === newReport.id));
+        if (exists) return prev;
+        return [newReport, ...prev];
+      });
+      
       // Show notification if it's not our own report
       if (newReport.reporterId !== user?.id) {
         toast.custom((t) => (
@@ -126,7 +151,16 @@ const App: React.FC = () => {
     });
 
     socket.on('statusUpdate', (updatedReport: Report) => {
-      setReports(prev => prev.map(r => r._id === updatedReport._id || r.id === updatedReport.id ? updatedReport : r));
+      setReports(prev => {
+        const index = prev.findIndex(r => (r._id && r._id === updatedReport._id) || (r.id && r.id === updatedReport.id));
+        if (index === -1) {
+          // If for some reason we missed the newReport event, add it now
+          return [updatedReport, ...prev];
+        }
+        const updatedReports = [...prev];
+        updatedReports[index] = updatedReport;
+        return updatedReports;
+      });
       
       // Notify if status changed to resolved
       if (updatedReport.status === 'resolved') {
@@ -143,9 +177,20 @@ const App: React.FC = () => {
     };
   }, [socket, user]);
 
+  const handleLogout = () => {
+    logoutUser();
+    setIsAuthenticated(false);
+    setUser(null);
+  };
+
   const handleAuthSuccess = (authenticatedUser: User) => {
     setUser(authenticatedUser);
     setIsAuthenticated(true);
+    if (authenticatedUser.role === 'admin' || authenticatedUser.role === 'authority') {
+      setActiveTab('reports');
+    } else {
+      setActiveTab('dashboard');
+    }
   };
 
   const handleDismissAlert = (id: string) => {
@@ -184,7 +229,10 @@ const App: React.FC = () => {
     try {
       const response = await fetch(`http://localhost:5000/api/reports/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
         body: JSON.stringify({
           status: 'resolved',
           timelineEvent: {
@@ -243,7 +291,10 @@ const App: React.FC = () => {
 
       const response = await fetch('http://localhost:5000/api/reports', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
         body: JSON.stringify(reportToSubmit)
       });
 
@@ -264,19 +315,41 @@ const App: React.FC = () => {
       }
       
       setActiveTab('reports');
-      toast.success("Environmental Report Lodged.");
+      toast.success(`Environmental Report Lodged: #${savedReport.reportNumber || '0'}`);
     } catch (err) {
       console.error("Error creating report:", err);
       toast.error("Database connection failure. Saving locally.");
+      const nextNum = reports.length > 0 ? Math.max(...reports.map(r => r.reportNumber || 0)) + 1 : 1;
       const fallbackReport = { 
         ...reportData, 
         id: `R-${Date.now()}`,
+        reportNumber: nextNum,
         status: 'pending',
         timestamp: new Date(),
         timeline: [{ status: 'pending', timestamp: new Date(), message: 'Offline Mode: Local Cache', actor: 'Local System' }]
       } as Report;
       setReports([fallbackReport, ...reports]);
       setActiveTab('reports');
+    }
+  };
+
+  const handleDeleteReport = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this incident report?")) return;
+    try {
+      const response = await fetch(`http://localhost:5000/api/reports/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeader()
+      });
+
+      if (response.ok) {
+        setReports(prev => prev.filter(r => r.id !== id && r._id !== id));
+        toast.success("Incident deleted.");
+      } else {
+        toast.error("Failed to delete incident.");
+      }
+    } catch (err) {
+      console.error("Error deleting report:", err);
+      toast.error("Network error. Could not delete incident.");
     }
   };
 
@@ -292,7 +365,10 @@ const App: React.FC = () => {
 
       const response = await fetch(`http://localhost:5000/api/reports/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        },
         body: JSON.stringify({
           status: newStatus,
           timelineEvent,
@@ -324,14 +400,17 @@ const App: React.FC = () => {
 
   const visibleReports = useMemo(() => {
     if (!user) return [];
-    if (user.role === 'admin' || user.role === 'authority') return reports;
+    if (user.role === 'admin') return reports;
+    if (user.role === 'authority') {
+      return reports.filter(r => r.assignedAuthorityId === user.organization);
+    }
     return reports.filter(r => r.reporterId === user.id);
   }, [reports, user]);
 
   if (!isAuthenticated || !user) return <Login onLoginSuccess={handleAuthSuccess} />;
 
   return (
-    <Layout user={user} onLogout={() => setIsAuthenticated(false)} activeTab={activeTab} setActiveTab={setActiveTab}>
+    <Layout user={user} onLogout={handleLogout} activeTab={activeTab} setActiveTab={setActiveTab}>
       {activeTab === 'dashboard' && (
         <Dashboard 
           reports={reports} 
@@ -347,319 +426,256 @@ const App: React.FC = () => {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="space-y-4 sm:space-y-6"
+          className="max-w-6xl mx-auto px-4 sm:px-8 space-y-8"
         >
-          <div className="bg-slate-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-2xl">
-            <div>
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight">Operational Feed</h2>
-              <p className="text-slate-400 text-[10px] sm:text-xs font-medium">Monitoring {visibleReports.length} active anomalies in your sector.</p>
-            </div>
-            {user.role === 'authority' && (
-              <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
-                <div className="flex-1 sm:flex-none px-3 sm:px-4 py-1.5 sm:py-2 bg-white/5 rounded-lg sm:rounded-xl border border-white/10 text-center">
-                  <p className="text-[6px] sm:text-[7px] font-black text-emerald-400 uppercase tracking-widest mb-0.5 sm:mb-1">Resolved</p>
-                  <p className="text-base sm:text-lg font-black">{reports.filter(r => r.status === 'resolved' && r.assignedAuthorityId === user.organization).length}</p>
-                </div>
-                <div className="flex-1 sm:flex-none px-3 sm:px-4 py-1.5 sm:py-2 bg-white/5 rounded-lg sm:rounded-xl border border-white/10 text-center">
-                  <p className="text-[6px] sm:text-[7px] font-black text-amber-400 uppercase tracking-widest mb-0.5 sm:mb-1">Active</p>
-                  <p className="text-base sm:text-lg font-black">{reports.filter(r => ['assigned', 'investigating'].includes(r.status) && r.assignedAuthorityId === user.organization).length}</p>
-                </div>
-              </div>
-            )}
-            <div className="hidden sm:block px-4 py-1.5 bg-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest border border-white/10">
-              Grid Secure
-            </div>
-            {user.role === 'admin' && (
-              <button 
-                onClick={() => setIsAlertModalOpen(true)}
-                className="w-full sm:w-auto px-5 py-2 bg-red-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-900/20"
-              >
-                Broadcast Alert
-              </button>
-            )}
-          </div>
-
-          {user.role === 'authority' && alerts.filter(a => !a.isRead).length > 0 && (
+          {/* Critical Alerts Section */}
+          {user.role === 'authority' && alerts.filter(a => !a.isRead && a.severity === 'critical').map(alert => (
             <motion.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="space-y-4 overflow-hidden"
+              key={alert.id}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-[#fee2e2]/60 border border-red-100 p-6 rounded-[2.5rem] flex items-center justify-between relative group"
             >
-              {alerts.filter(a => !a.isRead).map(alert => (
-                <div 
-                  key={alert.id} 
-                  className={`p-6 rounded-[2rem] border flex items-start justify-between gap-6 ${
-                    alert.severity === 'critical' ? 'bg-red-50 border-red-100' : 
-                    alert.severity === 'warning' ? 'bg-amber-50 border-amber-100' : 
-                    'bg-indigo-50 border-indigo-100'
-                  }`}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
-                      alert.severity === 'critical' ? 'bg-red-600 text-white' : 
-                      alert.severity === 'warning' ? 'bg-amber-600 text-white' : 
-                      'bg-indigo-600 text-white'
-                    }`}>
-                      {alert.severity === 'critical' ? (
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                      ) : (
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                      )}
-                    </div>
-                    <div>
-                      <h4 className={`font-black text-lg ${
-                        alert.severity === 'critical' ? 'text-red-900' : 
-                        alert.severity === 'warning' ? 'text-amber-900' : 
-                        'text-indigo-900'
-                      }`}>
-                        {alert.title}
-                      </h4>
-                      <p className={`text-sm font-medium leading-relaxed ${
-                        alert.severity === 'critical' ? 'text-red-700' : 
-                        alert.severity === 'warning' ? 'text-amber-700' : 
-                        'text-indigo-700'
-                      }`}>
-                        {alert.message}
-                      </p>
-                      <p className="text-[9px] font-black uppercase tracking-widest mt-2 opacity-50">
-                        {new Date(alert.timestamp).toLocaleTimeString()}
-                      </p>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => handleDismissAlert(alert.id)}
-                    className={`p-2 rounded-xl transition-all ${
-                      alert.severity === 'critical' ? 'hover:bg-red-100 text-red-400' : 
-                      alert.severity === 'warning' ? 'hover:bg-amber-100 text-amber-400' : 
-                      'hover:bg-indigo-100 text-indigo-400'
-                    }`}
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M6 18L18 6M6 6l12 12" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </button>
+              <div className="flex items-start gap-6">
+                <div className="w-14 h-14 bg-[#ef4444] rounded-2xl flex items-center justify-center text-white shadow-xl shadow-red-500/20">
+                  <ShieldAlert className="w-8 h-8" />
                 </div>
-              ))}
-            </motion.div>
-          )}
-
-          <div className="grid gap-6">
-            {visibleReports.length === 0 && (
-              <div className="text-center py-12 bg-slate-100 rounded-3xl border border-dashed border-slate-300">
-                <p className="font-black text-slate-400 uppercase tracking-widest text-xs">No reports found.</p>
+                <div className="pt-1">
+                  <h3 className="text-[#991b1b] text-xl font-black mb-1">{alert.title}</h3>
+                  <p className="text-[#b91c1c] text-sm font-bold opacity-80 leading-relaxed max-w-2xl">{alert.message}</p>
+                  <p className="text-[#ef4444] text-[10px] font-black uppercase tracking-widest mt-2">
+                    {new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  </p>
+                </div>
               </div>
-            )}
+              <button 
+                onClick={() => handleDismissAlert(alert.id)}
+                className="absolute top-6 right-6 p-2 rounded-full hover:bg-red-200/50 text-[#ef4444] transition-all"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M6 18L18 6M6 6l12 12" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+            </motion.div>
+          ))}
+
+          {/* Operational Reports List */}
+          <div className="grid gap-8">
             {visibleReports.map((r, idx) => (
               <motion.div 
                 key={r.id} 
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ delay: idx * 0.1, type: "spring", stiffness: 300, damping: 24 }}
-                className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden flex flex-col md:flex-row group hover:shadow-2xl hover:border-indigo-100 transition-shadow"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                className="bg-white rounded-[2rem] sm:rounded-[3rem] shadow-2xl shadow-slate-200/50 border border-white overflow-hidden flex flex-col md:flex-row"
               >
-                <div className="md:w-1/4 h-48 md:h-auto relative">
-                  <img src={r.imageUrl} className="w-full h-full object-cover" alt="Incident" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <div className="absolute bottom-4 left-4">
-                    <span className="px-2 py-1 bg-emerald-500 rounded text-[9px] font-black text-white uppercase tracking-widest">
-                      {r.type}
+                {/* Image Section */}
+                <div className="md:w-[200px] relative min-h-[200px] sm:min-h-0">
+                  <img src={r.imageUrl} className="absolute inset-0 w-full h-full object-cover" alt="Incident" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent" />
+                  <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6">
+                    <span className="px-3 py-1.5 bg-[#10b981] rounded-xl text-[10px] font-black text-white uppercase tracking-widest">
+                      {r.type === IncidentType.OTHER ? 'OTHER' : r.type}
                     </span>
                   </div>
                 </div>
-                <div className="flex-1 p-6 flex flex-col justify-between">
-                  <div>
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full animate-pulse ${r.status === 'resolved' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Status: {r.status}</span>
-                      </div>
-                      <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">#{r.id}</span>
+
+                {/* Content Section */}
+                <div className="flex-1 p-6 sm:p-10 flex flex-col h-full bg-white">
+                  <div className="flex justify-between items-start mb-4 sm:mb-6">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] shadow-[0_0_12px_#f59e0b]" />
+                      <span className="text-[9px] sm:text-[11px] font-black text-[#94a3b8] uppercase tracking-[0.2em]">STATUS: {r.status}</span>
                     </div>
-                    <h3 className="text-xl font-black text-slate-900 mb-2">{r.location.address}</h3>
-                    <p className="text-slate-500 text-sm font-medium italic mb-4 leading-relaxed">"{r.description}"</p>
-                    {r.aiInsights && (
-                      <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-100">
-                         <p className="text-[8px] font-black text-indigo-600 uppercase tracking-widest mb-1">Sentinel Insight</p>
-                         <p className="text-[10px] font-bold text-indigo-900">{r.aiInsights}</p>
-                      </div>
-                    )}
-
-                    {r.resolutionDetails && (
-                      <div className="mt-4 p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
-                        <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-2">Resolution Report</p>
-                        <p className="text-xs font-bold text-slate-800 mb-3 leading-relaxed">{r.resolutionDetails}</p>
-                        {r.resolvedImageUrl && (
-                          <div className="mt-3">
-                            <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-1">Evidence of Resolution</p>
-                            <img src={r.resolvedImageUrl} className="w-full max-h-48 object-cover rounded-xl border border-emerald-200 shadow-lg" alt="Resolution Proof" />
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <div className="mt-6 space-y-4">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Incident Timeline</p>
-                      <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-1 before:bottom-1 before:w-0.5 before:bg-slate-100">
-                        {r.timeline.map((event, i) => (
-                          <div key={i} className="relative">
-                            <div className="absolute -left-6 top-1 w-4 h-4 rounded-full bg-white border-2 border-slate-100 z-10" />
-                            <div className="flex justify-between items-start mb-1">
-                              <p className="text-[9px] font-black text-slate-900 uppercase tracking-widest">{event.status}</p>
-                              <p className="text-[7px] font-bold text-slate-300">{new Date(event.timestamp).toLocaleString()}</p>
-                            </div>
-                            <p className="text-[10px] font-bold text-slate-500 mb-1">{event.message}</p>
-                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Actor: {event.actor}</p>
-                            {event.proofUrl && (
-                              <div className="mt-2">
-                                <img src={event.proofUrl} className="w-16 h-16 object-cover rounded-lg border border-slate-200 shadow-sm" alt="Event Proof" />
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-[9px] sm:text-[11px] font-black text-[#cbd5e1] uppercase tracking-[0.1em]">
+                        #{r.reportNumber || '0'}
+                      </span>
+                      {user.role === 'admin' && (
+                        <button 
+                          onClick={() => handleDeleteReport(r.id)} 
+                          className="text-red-400 hover:text-red-500 transition-colors"
+                          title="Delete Report"
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </button>
+                      )}
                     </div>
-
-                    {user.role === 'authority' && r.assignedAuthorityId === user.organization && (
-                      <div className="mt-6 space-y-4">
-                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Internal Warden Notes</p>
-                          <div className="space-y-2 mb-3">
-                            {r.internalNotes?.map((note, i) => (
-                              <p key={i} className="text-[10px] font-bold text-slate-600 bg-white p-2 rounded-lg border border-slate-100">{note}</p>
-                            ))}
-                            {(!r.internalNotes || r.internalNotes.length === 0) && <p className="text-[10px] italic text-slate-400">No internal notes yet.</p>}
-                          </div>
-                          <div className="flex gap-2">
-                            <input 
-                              type="text" 
-                              value={noteText}
-                              onChange={(e) => setNoteText(e.target.value)}
-                              placeholder="Add a warden note..." 
-                              className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-[10px] font-bold outline-none"
-                            />
-                            <button 
-                              onClick={() => handleAddNote(r.id)}
-                              className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase tracking-widest">
-                              Add
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
 
-                  <div className="mt-8 pt-6 border-t border-slate-50">
-                    {user.role === 'admin' && r.status !== 'resolved' && r.status !== 'rejected' && (
-                      <div className="space-y-4">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Admin Command Controls</p>
-                        <div className="flex flex-wrap gap-2">
-                          {AUTHORITIES.map(auth => (
-                            <button key={auth} 
-                              onClick={() => handleUpdateStatus(r.id, 'assigned', `Admin reassigned report to ${auth}.`, 'Admin', { assignedAuthorityId: auth })}
-                              className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                                r.assignedAuthorityId === auth ? 'bg-indigo-900 text-white' : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                              }`}>
-                              {r.assignedAuthorityId === auth ? 'Assigned to ' : 'Assign '} {auth}
+                  <h2 className="text-2xl sm:text-4xl font-black text-[#1e293b] mb-1 sm:mb-2 leading-tight">{r.location.address.split(',')[0]}</h2>
+                  <p className="text-[#64748b] text-sm sm:text-lg font-bold italic mb-4 sm:mb-6 opacity-70 leading-relaxed">"{r.description}"</p>
+
+
+                  {/* Resolution Proof (Visible to all) */}
+                  {r.status === 'resolved' && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mb-6 p-4 sm:p-5 bg-emerald-50 rounded-[1.5rem] border border-emerald-100"
+                    >
+                      <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white">
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M5 13l4 4L19 7" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        </div>
+                        <p className="text-[10px] sm:text-[11px] font-black text-emerald-800 uppercase tracking-widest">Resolution Verified by Authority</p>
+                      </div>
+                      <p className="text-emerald-900 text-xs sm:text-sm font-bold mb-3 sm:mb-4 leading-relaxed">{r.resolutionDetails}</p>
+                      {r.resolvedImageUrl && (
+                        <div className="mt-4">
+                          <img 
+                            src={r.resolvedImageUrl} 
+                            className="w-full max-w-[240px] sm:max-w-[300px] h-32 sm:h-40 object-cover rounded-xl sm:rounded-2xl shadow-sm border border-emerald-200" 
+                            alt="Resolution Evidence" 
+                          />
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+
+                  <div className="flex-1">
+                    <p className="text-[10px] font-black text-[#cbd5e1] uppercase tracking-[0.2em] mb-6">Incident Timeline</p>
+                    <div className="relative pl-10 space-y-10">
+                      <div className="absolute left-1.5 top-2 bottom-2 w-0.5 bg-[#f1f5f9]" />
+                      {r.timeline.map((event, i) => (
+                        <div key={i} className="relative flex justify-between items-start group">
+                          {/* Circle Indicator */}
+                          <div className={`absolute -left-10 top-1 w-3.5 h-3.5 rounded-full bg-white border-2 z-10 transition-all ${
+                            event.status === 'pending' ? 'border-[#f1f5f9]' : 'border-[#cbd5e1]'
+                          }`} />
+                          
+                          <div>
+                            <p className="text-[11px] font-black text-[#1e293b] uppercase tracking-[0.1em] mb-1.5">{event.status}</p>
+                            <p className="text-[11px] font-bold text-[#64748b] opacity-80 leading-snug">{event.message}</p>
+                            <p className="text-[9px] font-black text-[#94a3b8] uppercase tracking-widest mt-2">Actor: {event.actor}</p>
+                          </div>
+
+                          <div className="text-right">
+                             <p className="text-[9px] font-black text-[#cbd5e1]">{new Date(event.timestamp).toLocaleDateString()}</p>
+                             <p className="text-[9px] font-black text-[#cbd5e1]">{new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Resolution Form (Authorities only) */}
+                  {user.role === 'authority' && resolvingId === r.id && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mt-8 p-8 bg-slate-50 rounded-[2.5rem] border border-slate-200"
+                    >
+                      <h4 className="text-xl font-black text-slate-800 mb-6">Resolution Protocol</h4>
+                      <textarea 
+                        value={resolutionText}
+                        onChange={(e) => setResolutionText(e.target.value)}
+                        placeholder="Detail the field actions taken and the final environmental outcome..."
+                        className="w-full bg-white border border-slate-200 rounded-2xl p-5 text-sm font-bold text-slate-900 outline-none min-h-[120px] mb-6 focus:border-[#10b981] transition-all"
+                      />
+                      
+                      <div className="mb-8">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Photographic Proof (Required)</p>
+                        <div className="flex items-center gap-4">
+                          <label className="flex-1 cursor-pointer group">
+                            <div className="w-full h-40 border-4 border-dashed border-slate-200 group-hover:border-[#10b981]/30 rounded-[2rem] flex flex-col items-center justify-center bg-white group-hover:bg-emerald-50 transition-all overflow-hidden relative">
+                              {resolutionImage ? (
+                                <img src={resolutionImage} className="w-full h-full object-cover" alt="Proof" />
+                              ) : (
+                                <>
+                                  <svg className="w-10 h-10 text-slate-300 group-hover:text-emerald-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                  <span className="text-[10px] font-black text-slate-400 group-hover:text-emerald-600 uppercase tracking-widest">Select Evidence Image</span>
+                                </>
+                              )}
+                            </div>
+                            <input type="file" accept="image/*" className="hidden" onChange={handleResolutionFileChange} />
+                          </label>
+                          {resolutionImage && (
+                            <button onClick={() => setResolutionImage(null)} className="p-3 bg-red-50 text-red-500 rounded-2xl hover:bg-red-100 transition-all">
+                              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                             </button>
-                          ))}
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4">
+                        <button 
+                          onClick={() => handleResolveSubmit(r.id)}
+                          className="flex-1 py-4 bg-[#10b981] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-[#059669] shadow-xl shadow-emerald-900/10 transition-all">
+                          Finalize Resolution
+                        </button>
+                        <button 
+                          onClick={() => setResolvingId(null)}
+                          className="px-8 py-4 bg-white border border-slate-200 text-slate-400 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">
+                          Cancel
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Actions (Authorities only) */}
+                  {user.role === 'authority' && r.assignedAuthorityId === user.organization && r.status !== 'resolved' && (
+                    <div className="mt-12 flex gap-4">
+                      {(r.status === 'assigned' || r.status === 'pending') && (
+                        <button 
+                          onClick={() => handleUpdateStatus(r.id, 'investigating', `${user.organization} has dispatched a field unit.`, user.name)}
+                          className="px-8 py-3 bg-[#0f172a] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10"
+                        >
+                          Dispatch Response Unit
+                        </button>
+                      )}
+                      {r.status === 'investigating' && resolvingId !== r.id && (
+                        <button 
+                          onClick={() => setResolvingId(r.id)}
+                          className="px-8 py-3 bg-[#10b981] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#059669] transition-all"
+                        >
+                          Mark as Resolved
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Admin Command Controls */}
+                  {user.role === 'admin' && r.status !== 'resolved' && r.status !== 'rejected' && (
+                    <div className="mt-12 p-8 bg-indigo-50/50 rounded-[2.5rem] border border-indigo-100/50">
+                      <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-6">Central Command Assignment</p>
+                      <div className="flex flex-wrap gap-3">
+                        {AUTHORITIES.map(auth => (
                           <button 
-                            onClick={() => handleUpdateStatus(r.id, 'rejected', `Admin rejected the report as invalid.`, 'Admin')}
-                            className="px-4 py-2 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-700">
-                            Reject Report
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {user.role === 'authority' && r.assignedAuthorityId === user.organization && (
-                      <div className="space-y-4">
-                        {resolvingId === r.id ? (
-                          <motion.div 
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 overflow-hidden"
+                            key={auth} 
+                            onClick={() => handleUpdateStatus(r.id, 'assigned', `Central Command assigned this anomaly to ${auth}.`, 'Admin', { assignedAuthorityId: auth })}
+                            className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                              r.assignedAuthorityId === auth ? 
+                              'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 
+                              'bg-white text-indigo-400 border border-indigo-100 hover:bg-indigo-50'
+                            }`}
                           >
-                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3">Resolution Protocol</p>
-                            <textarea 
-                              value={resolutionText}
-                              onChange={(e) => setResolutionText(e.target.value)}
-                              placeholder="Describe the actions taken and final outcome..."
-                              className="w-full bg-white border border-emerald-200 rounded-xl p-4 text-xs font-bold text-slate-900 outline-none min-h-[100px] mb-4"
-                            />
-                            
-                            <div className="mb-4">
-                              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-2">Attach Proof (Image)</p>
-                              <div className="flex items-center gap-4">
-                                <label className="flex-1 cursor-pointer">
-                                  <div className="w-full h-32 border-2 border-dashed border-emerald-200 rounded-xl flex flex-col items-center justify-center bg-white hover:bg-emerald-50 transition-all">
-                                    {resolutionImage ? (
-                                      <img src={resolutionImage} className="w-full h-full object-cover rounded-lg" alt="Proof" />
-                                    ) : (
-                                      <>
-                                        <svg className="w-8 h-8 text-emerald-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                        <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Upload Evidence</span>
-                                      </>
-                                    )}
-                                  </div>
-                                  <input type="file" accept="image/*" className="hidden" onChange={handleResolutionFileChange} />
-                                </label>
-                                {resolutionImage && (
-                                  <button onClick={() => setResolutionImage(null)} className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100">
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="flex gap-3">
-                              <button 
-                                onClick={() => handleResolveSubmit(r.id)}
-                                className="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700">
-                                Confirm Resolution
-                              </button>
-                              <button 
-                                onClick={() => setResolvingId(null)}
-                                className="px-6 py-3 border border-emerald-200 text-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest">
-                                Cancel
-                              </button>
-                            </div>
-                          </motion.div>
-                        ) : (
-                          <div className="flex flex-wrap gap-2">
-                            {r.status === 'assigned' && (
-                              <>
-                                <button 
-                                  onClick={() => handleUpdateStatus(r.id, 'investigating', `${user.organization} has dispatched a field unit.`, user.name)}
-                                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700">
-                                  Dispatch Unit
-                                </button>
-                                <button 
-                                  onClick={() => handleUpdateStatus(r.id, 'investigating', `${user.organization} has started an investigation.`, user.name)}
-                                  className="px-4 py-2 bg-amber-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-amber-700">
-                                  Start Investigation
-                                </button>
-                              </>
-                            )}
-                            {r.status === 'investigating' && (
-                              <button 
-                                onClick={() => setResolvingId(r.id)}
-                                className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700">
-                                Resolve Incident
-                              </button>
-                            )}
-                            {['assigned', 'investigating'].includes(r.status) && (
-                              <button 
-                                onClick={() => handleUpdateStatus(r.id, 'rejected', `${user.organization} rejected the report as invalid.`, user.name)}
-                                className="px-4 py-2 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-700">
-                                Reject
-                              </button>
-                            )}
-                          </div>
-                        )}
+                            {auth}
+                          </button>
+                        ))}
+                        <button 
+                          onClick={() => handleUpdateStatus(r.id, 'rejected', `Report dismissed by Central Command: Invalid or Duplicated data.`, 'Admin')}
+                          className="px-5 py-2.5 bg-red-50 text-red-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-100 transition-all border border-red-100"
+                        >
+                          Reject Anomalous Data
+                        </button>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             ))}
+          </div>
+
+          {/* Floating Action Buttons */}
+          <div className="fixed bottom-10 right-10 flex flex-col gap-4 z-[100]">
+
+            <motion.button 
+              whileHover={{ scale: 1.1, y: -5 }}
+              className="w-16 h-16 bg-[#059669] text-white rounded-3xl flex items-center justify-center shadow-2xl shadow-emerald-500/40"
+            >
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path d="M13 10V3L4 14h7v7l9-11h-7z" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </motion.button>
           </div>
         </motion.div>
       )}
@@ -673,9 +689,13 @@ const App: React.FC = () => {
           authorities={AUTHORITIES}
           onBroadcastAlert={() => setIsAlertModalOpen(true)} 
         />
-      ) : (
+      ) : user.role === 'authority' ? (
         <SystemInsights />
+      ) : (
+        <Leaderboard currentUser={user} />
       ))}
+
+      {activeTab === 'database' && user.role === 'admin' && <DatabaseViewer />}
 
       {isAlertModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300">
@@ -740,8 +760,8 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <ChatSentinel user={user} />
-      <IntercomChat user={user} />
+      {user && <ChatSentinel user={user} />}
+
       <Toaster position="top-right" />
 
       {/* Points Notification */}
@@ -763,7 +783,7 @@ const App: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
-    </Layout>
+      </Layout>
   );
 };
 

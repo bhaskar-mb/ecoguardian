@@ -151,16 +151,16 @@ const EnvironmentalAnalytics: React.FC = () => {
       animate="show"
       className="space-y-6"
     >
-      <motion.div variants={itemVariants} className="bg-slate-900 p-6 sm:p-10 rounded-2xl sm:rounded-[3rem] text-white shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full -mr-20 -mt-20 blur-3xl" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <motion.div variants={itemVariants} className="bg-slate-900 p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full -mr-16 -mt-16 blur-3xl" />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-black uppercase tracking-widest text-emerald-500">Live Network Feed</span>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Live Network Feed</span>
             </div>
-            <h2 className="text-3xl sm:text-5xl font-black mb-4 tracking-tight">Nature's Vital Signs</h2>
-            <p className="text-slate-400 text-base sm:text-lg font-medium max-w-2xl leading-relaxed">
+            <h2 className="text-2xl sm:text-4xl font-black mb-2 tracking-tight">Nature's Vital Signs</h2>
+            <p className="text-slate-400 text-sm font-medium max-w-2xl leading-relaxed">
               Real-time tracking of our forests and wildlife to protect the future of our planet.
             </p>
           </div>
@@ -342,7 +342,8 @@ const EnvironmentalAnalytics: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
             {PREDICTIVE_INSIGHTS.map((insight, i) => (
               <div key={i} className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-3xl hover:bg-white/10 transition-all">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">{insight.metric}</p>

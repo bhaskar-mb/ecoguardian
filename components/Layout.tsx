@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { LayoutDashboard, FileText, BarChart3, Library, ShieldAlert, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, BarChart3, Library, ShieldAlert, LogOut, Leaf } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,100 +15,72 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout, activeTab, se
   const isAuth = user.role === 'authority';
 
   const NAV_ITEMS = [
-    { id: 'dashboard', label: 'Command', icon: <LayoutDashboard className="w-5 h-5 sm:w-6 sm:h-6" /> },
-    { id: 'reports', label: 'Operations', icon: <FileText className="w-5 h-5 sm:w-6 sm:h-6" /> },
-    { id: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6" /> },
-    { id: 'notes', label: 'Library', icon: <Library className="w-5 h-5 sm:w-6 sm:h-6" /> },
-    { id: 'leaderboard', label: isAdmin ? 'Admin' : 'Arch', icon: <ShieldAlert className="w-5 h-5 sm:w-6 sm:h-6" /> }
+    { id: 'dashboard', label: 'COMMAND', icon: <LayoutDashboard className="w-5 h-5" /> },
+    { id: 'reports', label: 'OPERATIONS', icon: <FileText className="w-5 h-5" /> },
+    { id: 'analytics', label: 'ANALYTICS', icon: <BarChart3 className="w-5 h-5" /> },
+    { id: 'notes', label: 'LIBRARY', icon: <Library className="w-5 h-5" /> },
+    { id: 'leaderboard', label: isAdmin ? 'ADMIN' : (isAuth ? 'ARCH' : 'LEADERBOARD'), icon: <ShieldAlert className="w-5 h-5" /> },
+    ...(isAdmin ? [{ id: 'database', label: 'DATABASE', icon: <Library className="w-5 h-5" /> }] : [])
   ];
 
   return (
-    <div className={`min-h-screen flex flex-col transition-colors duration-500 ${isAdmin ? 'bg-[#0f172a]' : isAuth ? 'bg-amber-50/20' : 'bg-slate-50'}`}>
+    <div className={`min-h-screen flex flex-col transition-colors duration-500 bg-transparent`}>
       <motion.header 
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className={`sticky top-0 z-50 backdrop-blur-2xl border-b px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between ${isAdmin ? 'bg-slate-900/80 border-slate-800' : 'bg-white/70 border-slate-200/60'}`}
+        className="sticky top-0 z-50 px-4 sm:px-12 py-4 flex items-center justify-between"
       >
-        <div className="flex items-center gap-3 sm:gap-4 cursor-pointer group" onClick={() => setActiveTab('dashboard')}>
-          <motion.div 
-            whileHover={{ scale: 1.1, rotate: 5 }}
-            whileTap={{ scale: 0.9 }}
-            className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-2xl ${
-            isAdmin ? 'bg-indigo-600 shadow-indigo-500/20' : isAuth ? 'bg-amber-600 shadow-amber-500/20' : 'bg-emerald-600 shadow-emerald-500/20'
-          }`}>
-             <ShieldAlert className="w-6 h-6 sm:w-7 sm:h-7" />
-          </motion.div>
-          <div>
-            <span className={`font-black text-xl sm:text-2xl tracking-tighter ${isAdmin ? 'text-white' : 'text-slate-900'}`}>EcoGuardian</span>
-            <p className={`text-[7px] sm:text-[8px] font-black uppercase tracking-[0.2em] sm:tracking-[0.4em] ${isAdmin ? 'text-indigo-400' : 'text-slate-400'}`}>
-              {isAuth ? user.organization : 'Environmental Intel Network'}
+        <div className="flex items-center gap-4 cursor-pointer group" onClick={() => setActiveTab('dashboard')}>
+          <div className="w-12 h-12 bg-[#f97316] rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-500/20 group-hover:scale-105 transition-transform">
+             <ShieldAlert className="w-7 h-7 fill-white/20" strokeWidth={2.5} />
+          </div>
+          <div className="hidden sm:block">
+            <span className="font-black text-2xl tracking-tighter text-[#1e293b] block leading-none mb-1">EcoGuardian</span>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#64748b]">
+              {isAuth ? user.organization?.toUpperCase() : 'Environmental Intel Network'}
             </p>
           </div>
         </div>
 
-        <nav className="hidden lg:flex items-center gap-2 p-1.5 rounded-2xl border transition-colors duration-300 bg-slate-100/80 border-slate-200/50">
-          {NAV_ITEMS.map(tab => (
-            <motion.button 
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              whileHover={{ scale: activeTab === tab.id ? 1.05 : 1 }}
-              whileTap={{ scale: 0.95 }}
-              className={`relative px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                activeTab === tab.id ? 'text-white shadow-xl' : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              {activeTab === tab.id && (
-                <motion.div
-                  layoutId="activeTabIndicatorDesktop"
-                  className="absolute inset-0 bg-slate-900 rounded-xl"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                />
-              )}
-              <span className="relative z-10">{tab.label}</span>
-            </motion.button>
-          ))}
+        <nav className="hidden lg:flex items-center gap-1 p-1 bg-[#e2e8f0]/50 backdrop-blur-md rounded-[1.5rem] border border-white">
+          {NAV_ITEMS.map(tab => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button 
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative px-8 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
+                  isActive ? 'bg-[#0f172a] text-white' : 'text-[#475569] hover:text-[#0f172a]'
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </nav>
 
-        <div className="flex items-center gap-4 sm:gap-6">
-          {user.role === 'user' && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="hidden md:flex items-center gap-3 px-4 py-2 bg-emerald-50 rounded-2xl border border-emerald-100"
-            >
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">{user.points} PTS</span>
-            </motion.div>
-          )}
-          <div className={`flex items-center gap-3 sm:gap-4 pl-0 sm:pl-6 border-l-0 sm:border-l ${isAdmin ? 'border-slate-800' : 'border-slate-200'}`}>
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 pl-6">
             <div className="text-right hidden sm:block">
-              <p className={`text-sm font-black leading-none mb-1 ${isAdmin ? 'text-white' : 'text-slate-900'}`}>{user.name}</p>
-              <p className={`text-[9px] font-black uppercase tracking-widest ${isAdmin ? 'text-indigo-400' : 'text-slate-400'}`}>
-                Sector {isAdmin ? 'Alpha' : 'Beta'}
+              <p className="text-sm font-black leading-none mb-1 text-[#1e293b]">{user.name}</p>
+              <p className="text-[9px] font-black uppercase tracking-widest text-[#94a3b8]">
+                {user.role === 'admin' ? 'Sector Alpha' : 'Sector Beta'}
               </p>
             </div>
             <div className="relative group cursor-pointer">
-              <motion.img 
-                whileHover={{ scale: 1.1 }}
+              <img 
                 src={user.avatar} 
-                className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl border-2 shadow-lg transition-all ${isAdmin ? 'border-slate-800 group-hover:border-indigo-500' : 'border-white group-hover:border-emerald-500'}`} 
+                className="w-11 h-11 rounded-2xl border-4 border-white shadow-xl shadow-slate-200" 
                 alt="Avatar" 
               />
-              <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-emerald-500 border-2 border-white rounded-full" />
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[#10b981] border-4 border-[#f8fafc] rounded-full" />
             </div>
-            <motion.button 
-              whileHover={{ scale: 1.1, rotate: 10 }}
-              whileTap={{ scale: 0.9 }}
+            <button 
               onClick={onLogout} 
-              className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl transition-all border ${
-                isAdmin 
-                  ? 'bg-slate-800 border-slate-700 text-slate-400 hover:text-red-400 hover:bg-red-900/30' 
-                  : 'bg-slate-100 border-slate-200 text-slate-400 hover:text-red-500 hover:bg-red-50'
-              }`}
+              className="p-3 rounded-2xl bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:shadow-lg transition-all"
             >
-               <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
-            </motion.button>
+               <LogOut className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </motion.header>

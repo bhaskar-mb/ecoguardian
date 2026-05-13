@@ -10,6 +10,7 @@ const timelineEventSchema = new mongoose.Schema({
 });
 
 const reportSchema = new mongoose.Schema({
+  reportNumber: { type: Number, default: 0 },
   type: { type: String, required: true },
   severity: { type: String, required: true },
   description: String,
@@ -36,6 +37,21 @@ const reportSchema = new mongoose.Schema({
       delete ret._id;
       delete ret.__v;
       return ret;
+    }
+  }
+});
+
+reportSchema.pre('save', async function() {
+  if (this.isNew || !this.reportNumber) {
+    try {
+      const ReportModel = mongoose.model('Report');
+      const lastReport = await ReportModel.findOne({}, {}, { sort: { 'reportNumber': -1 } });
+      const nextNum = (lastReport && lastReport.reportNumber) ? lastReport.reportNumber + 1 : 1;
+      this.reportNumber = nextNum;
+    } catch (err) {
+      console.error('Error in pre-save reportNumber generation:', err);
+      // If it fails, we still want to save, maybe with 0 or a fallback
+      if (!this.reportNumber) this.reportNumber = 1;
     }
   }
 });

@@ -176,7 +176,10 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, user, onNewReport, onNav
                       r.status === 'pending' ? 'bg-amber-400 animate-pulse' : 'bg-indigo-400'
                     }`} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-black text-white truncate">{r.type}</p>
+                      <p className="text-[10px] font-black text-white truncate">
+                        <span className="text-indigo-400 mr-1.5">#{r.reportNumber || '0'}</span>
+                        {r.type}
+                      </p>
                       <p className="text-[9px] font-bold text-slate-500 truncate">{r.location.address || 'Unknown location'}</p>
                     </div>
                     <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide shrink-0 ${
@@ -190,7 +193,7 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, user, onNewReport, onNav
           </div>
 
           {/* Global Activity Chart */}
-          <div className="lg:col-span-3 bg-white rounded-[2rem] p-6 sm:p-8 border border-slate-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+          <div className="lg:col-span-3 bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 sm:p-8 border border-white/50 shadow-lg hover:shadow-xl transition-all overflow-hidden">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-black text-xl text-slate-900">Global Incident Activity</h3>
               <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-indigo-100">7 Days</span>
@@ -298,7 +301,7 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, user, onNewReport, onNav
             <button
               key={action.tab}
               onClick={() => onNavigate(action.tab)}
-              className="group relative bg-white rounded-[2rem] p-6 sm:p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all text-left overflow-hidden"
+              className="group relative bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 sm:p-8 border border-white/50 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all text-left overflow-hidden"
             >
               <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-emerald-50`} />
               <div className="relative z-10">
@@ -339,7 +342,10 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, user, onNewReport, onNav
                       r.status === 'pending' ? 'bg-amber-400 animate-pulse' : 'bg-indigo-400'
                     }`} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-black text-white truncate">{r.type}</p>
+                      <p className="text-[10px] font-black text-white truncate">
+                        <span className="text-amber-400 mr-1.5">#{r.reportNumber || '0'}</span>
+                        {r.type}
+                      </p>
                       <p className="text-[9px] font-bold text-slate-500 truncate">{r.location.address || 'Unknown location'}</p>
                     </div>
                   </div>
@@ -349,7 +355,7 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, user, onNewReport, onNav
           </div>
 
           {/* Regional Activity Chart */}
-          <div className="lg:col-span-3 bg-white rounded-[2rem] p-6 sm:p-8 border border-slate-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden text-slate-900">
+          <div className="lg:col-span-3 bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 sm:p-8 border border-white/50 shadow-lg hover:shadow-xl transition-all overflow-hidden text-slate-900">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-black text-xl">Sector Activity Trends</h3>
               <span className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-100">Live Grid</span>
@@ -439,12 +445,17 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, user, onNewReport, onNav
       {/* Hero Banner */}
       <motion.div
         variants={itemVariants}
-        className="relative overflow-hidden rounded-2xl sm:rounded-[2rem] text-white shadow-2xl"
-        style={{ background: 'linear-gradient(135deg, #0f172a 0%, #064e3b 60%, #065f46 100%)' }}
+        className="relative overflow-hidden rounded-2xl sm:rounded-[2rem] text-white shadow-2xl border border-emerald-500/10"
+        style={{ 
+          background: 'linear-gradient(135deg, #022c22 0%, #064e3b 50%, #047857 100%)',
+          boxShadow: '0 25px 50px -12px rgba(6, 78, 59, 0.4)'
+        }}
       >
-        {/* Decorative blobs */}
-        <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/4" />
-        <div className="absolute bottom-0 left-0 w-60 h-60 bg-teal-500/15 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/4" />
+        {/* Decorative blobs for a premium animated mesh gradient effect */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-400/20 rounded-full blur-[120px] -translate-y-1/4 translate-x-1/4 animate-pulse" style={{ animationDuration: '8s' }} />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-teal-400/20 rounded-full blur-[100px] translate-y-1/4 -translate-x-1/4 animate-pulse" style={{ animationDuration: '12s' }} />
+        <div className="absolute top-1/2 left-1/3 w-[300px] h-[300px] bg-cyan-400/15 rounded-full blur-[80px] -translate-y-1/2 animate-pulse" style={{ animationDuration: '10s' }} />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30 pointer-events-none" />
 
         <div className="relative z-10 p-6 sm:p-10">
           {/* Greeting row */}
@@ -505,7 +516,7 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, user, onNewReport, onNav
           <button
             key={card.tab}
             onClick={() => onNavigate(card.tab === 'report' ? 'report' : card.tab)}
-            className={`group relative bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all text-left overflow-hidden ${card.glow}`}
+            className={`group relative bg-white/70 backdrop-blur-lg rounded-[2rem] p-6 border border-white/50 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all text-left overflow-hidden ${card.glow}`}
           >
             {/* Hover gradient overlay */}
             <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient} opacity-0 group-hover:opacity-5 transition-opacity`} />
@@ -529,7 +540,7 @@ const Dashboard: React.FC<DashboardProps> = ({ reports, user, onNewReport, onNav
       {/* Bottom row: Chart + How to Earn */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-5 gap-5">
         {/* Chart */}
-        <div className="lg:col-span-3 bg-white rounded-[2rem] p-6 sm:p-8 border border-slate-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+        <div className="lg:col-span-3 bg-white/70 backdrop-blur-xl rounded-[2rem] p-6 sm:p-8 border border-white/50 shadow-lg hover:shadow-xl transition-all overflow-hidden">
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-black text-xl text-slate-900">Regional Activity</h3>
             <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-100">Live Feed</span>

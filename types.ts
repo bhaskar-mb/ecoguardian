@@ -31,6 +31,7 @@ export interface TimelineEvent {
 export interface Report {
   id: string;
   _id?: string;
+  reportNumber?: number;
   type: IncidentType;
   severity: Severity;
   description: string;
@@ -47,7 +48,7 @@ export interface Report {
   aiInsights?: string;
   timeline: TimelineEvent[];
   resolutionDetails?: string;
-  resolutionImageUrl?: string;
+  resolvedImageUrl?: string;
   internalNotes?: string[];
 }
 

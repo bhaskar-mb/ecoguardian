@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>EcoGuardian – Project Poster</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100vw;height:100vh;overflow:hidden;background:#020d04;font-family:'Outfit',sans-serif}
+
+/* ── FIXED CENTRE on viewport ── */
+.scaler{position:fixed;top:50%;left:50%;transform-origin:center center}
+
+/* ── POSTER: A2 landscape 1587×1122 px ── */
+.poster{
+  width:1587px;height:1122px;
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;
+  padding:28px 34px 20px;
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;
+
+  background:
+    radial-gradient(ellipse 72% 58% at 12% 16%,rgba(34,197,94,.16) 0%,transparent 55%),
+    radial-gradient(ellipse 55% 48% at 88% 84%,rgba(13,148,136,.14) 0%,transparent 55%),
+    radial-gradient(ellipse 32% 38% at 52% 50%,rgba(6,78,59,.22) 0%,transparent 60%),
+    linear-gradient(150deg,#020d04 0%,#041a08 40%,#031408 70%,#020d04 100%);
+}
+.poster::before{
+  content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    radial-gradient(circle,rgba(34,197,94,.26) 1px,transparent 1px),
+    radial-gradient(circle,rgba(13,148,136,.16) 1px,transparent 1px);
+  background-size:52px 52px,78px 78px;background-position:0 0,26px 26px;opacity:.35;
+}
+.orb{position:absolute;border-radius:50%;filter:blur(90px);z-index:0;pointer-events:none}
+.o1{width:500px;height:500px;top:-160px;left:-120px;background:radial-gradient(circle,rgba(34,197,94,.2),transparent 70%)}
+.o2{width:400px;height:400px;bottom:-120px;right:-100px;background:radial-gradient(circle,rgba(13,148,136,.17),transparent 70%)}
+.o3{width:240px;height:240px;top:40%;right:28%;background:radial-gradient(circle,rgba(14,165,233,.1),transparent 70%)}
+.poster>*{position:relative;z-index:1}
+
+/* ════ HEADER ════ */
+.hdr{
+  display:flex;align-items:center;justify-content:space-between;gap:24px;
+  padding-bottom:20px;margin-bottom:16px;
+  border-bottom:1px solid rgba(34,197,94,.22);flex-shrink:0;
+}
+.hdr-left{display:flex;align-items:center;gap:18px}
+.shield{
+  width:82px;height:82px;flex-shrink:0;
+  background:linear-gradient(135deg,#22c55e,#0d9488);border-radius:20px;
+  display:flex;align-items:center;justify-content:center;font-size:42px;
+  box-shadow:0 0 32px rgba(34,197,94,.55),0 0 70px rgba(34,197,94,.2);
+}
+.brand h1{
+  font-size:3.4rem;font-weight:900;line-height:1;letter-spacing:-2px;
+  background:linear-gradient(90deg,#22c55e,#2dd4bf,#38bdf8);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.brand .sub{font-size:.82rem;font-weight:600;letter-spacing:2px;color:rgba(134,239,172,.65);text-transform:uppercase;margin-top:4px}
+.hdr-meta{text-align:right;font-size:.82rem;color:rgba(134,239,172,.6);line-height:1.7}
+.hdr-meta strong{display:block;font-size:.96rem;color:#86efac;margin-bottom:2px}
+
+/* ════ OVERVIEW STRIP ════ */
+.overview{
+  background:rgba(255,255,255,.04);border:1px solid rgba(34,197,94,.2);
+  border-radius:16px;padding:16px 26px;margin-bottom:16px;
+  font-size:.98rem;line-height:1.75;color:rgba(240,253,244,.82);flex-shrink:0;
+}
+.overview .hl{color:#86efac;font-weight:700}
+
+/* ════ STATS ROW ════ */
+.stats-row{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:12px;
+  margin-bottom:16px;flex-shrink:0;
+}
+.stat{
+  background:rgba(255,255,255,.04);border:1px solid rgba(34,197,94,.18);
+  border-radius:16px;padding:14px 8px;text-align:center;
+}
+.sn{
+  font-size:2.2rem;font-weight:900;line-height:1;
+  background:linear-gradient(90deg,#22c55e,#2dd4bf);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.sl{font-size:.7rem;font-weight:700;color:rgba(134,239,172,.65);margin-top:4px;text-transform:uppercase;letter-spacing:.6px}
+
+/* ════ GRID LAYOUTS ════ */
+.grid3{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:14px;margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1.2fr 1fr;gap:14px}
+
+/* ════ CARD ════ */
+.card{
+  background:rgba(255,255,255,.04);border:1px solid rgba(34,197,94,.18);
+  border-radius:18px;padding:18px 20px;
+}
+.ct{
+  display:flex;align-items:center;gap:8px;
+  font-size:.72rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(134,239,172,.8);margin-bottom:12px;
+}
+.ct::before{content:'';width:7px;height:7px;border-radius:50%;background:#22c55e;flex-shrink:0;box-shadow:0 0 6px #22c55e}
+
+/* ════ PROBLEM / SOLUTION ════ */
+.plist{list-style:none;display:flex;flex-direction:column;gap:7px}
+.plist li{display:flex;align-items:flex-start;gap:8px;font-size:.86rem;color:rgba(240,253,244,.8);line-height:1.45}
+.div{border-top:1px solid rgba(34,197,94,.14);margin:10px 0}
+
+/* ════ FEATURES 2×3 ════ */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fc{
+  background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.18);
+  border-radius:12px;padding:11px 13px;
+  display:flex;align-items:flex-start;gap:10px;
+}
+.fc .fe{font-size:1.5rem;flex-shrink:0}
+.fc h4{font-size:.82rem;font-weight:700;color:#4ade80;margin-bottom:2px}
+.fc p{font-size:.72rem;color:rgba(240,253,244,.62);line-height:1.38}
+
+/* ════ TECH CHIPS ════ */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:4px 12px;border-radius:999px;font-size:.72rem;font-weight:700;border:1px solid}
+.cr{background:rgba(14,165,233,.15);border-color:rgba(14,165,233,.4);color:#7dd3fc}
+.cn{background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.4);color:#86efac}
+.cs{background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.4);color:#a5b4fc}
+.cm{background:rgba(13,148,136,.15);border-color:rgba(13,148,136,.4);color:#5eead4}
+.cg{background:rgba(245,158,11,.16);border-color:rgba(245,158,11,.4);color:#fcd34d}
+.ctw{background:rgba(239,68,68,.13);border-color:rgba(239,68,68,.35);color:#fca5a5}
+.lbl{font-size:.62rem;font-weight:700;color:rgba(134,239,172,.45);letter-spacing:.7px;text-transform:uppercase;margin-bottom:4px;margin-top:8px}
+
+/* ════ ARCHITECTURE ════ */
+.arch{display:flex;align-items:center;justify-content:space-between;gap:5px}
+.an{
+  flex:1;background:rgba(34,197,94,.09);border:1px solid rgba(34,197,94,.22);
+  border-radius:12px;padding:10px 6px;text-align:center;min-width:0;
+}
+.ae{font-size:1.4rem;display:block;margin-bottom:3px}
+.al{font-size:.66rem;font-weight:700;color:#86efac;line-height:1.3}
+.aa{color:#22c55e;font-size:1rem;flex-shrink:0}
+.aip{
+  background:linear-gradient(90deg,rgba(245,158,11,.1),rgba(34,197,94,.07));
+  border:1px solid rgba(245,158,11,.28);border-radius:10px;
+  padding:9px 13px;font-size:.75rem;color:rgba(240,253,244,.78);line-height:1.5;margin-top:8px;
+}
+.aip strong{color:#fcd34d}
+
+/* ════ ROLES ════ */
+.roles{display:flex;flex-direction:column;gap:8px}
+.role{border-radius:13px;padding:12px 13px;display:flex;align-items:flex-start;gap:10px}
+.rl-u{background:rgba(14,165,233,.09);border:1px solid rgba(14,165,233,.28)}
+.rl-a{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.26)}
+.rl-f{background:rgba(34,197,94,.09);border:1px solid rgba(34,197,94,.26)}
+.role .re{font-size:1.55rem;flex-shrink:0}
+.role h4{font-size:.8rem;font-weight:800;margin-bottom:3px}
+.rl-u h4{color:#7dd3fc}.rl-a h4{color:#fcd34d}.rl-f h4{color:#4ade80}
+.role ul{list-style:none;font-size:.7rem;color:rgba(240,253,244,.65);line-height:1.6}
+
+/* ════ INCIDENTS ════ */
+.ibadges{display:flex;flex-wrap:wrap;gap:6px}
+.ib{
+  display:flex;align-items:center;gap:4px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(134,239,172,.18);
+  border-radius:8px;padding:5px 11px;font-size:.75rem;color:rgba(240,253,244,.78);
+}
+.sevrow{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap}
+.sv{padding:4px 14px;border-radius:999px;font-size:.72rem;font-weight:700;border:1px solid}
+.sv-l{background:rgba(34,197,94,.16);border-color:rgba(34,197,94,.4);color:#86efac}
+.sv-m{background:rgba(234,179,8,.16);border-color:rgba(234,179,8,.4);color:#fef08a}
+.sv-h{background:rgba(249,115,22,.16);border-color:rgba(249,115,22,.4);color:#fed7aa}
+.sv-c{background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.4);color:#fca5a5}
+
+/* ════ LIFECYCLE ════ */
+.lf{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.ls{
+  background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);
+  border-radius:8px;padding:4px 11px;font-size:.7rem;font-weight:700;color:#86efac;white-space:nowrap;
+}
+.la{color:#22c55e;font-size:.88rem}
+.ls-r{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#fca5a5}
+
+/* ════ UNIQUE ════ */
+.ulist{list-style:none;display:flex;flex-direction:column;gap:6px}
+.ulist li{
+  display:flex;align-items:center;gap:9px;font-size:.78rem;
+  color:rgba(240,253,244,.78);padding:6px 10px;
+  background:rgba(34,197,94,.07);border-left:2px solid #22c55e;
+  border-radius:0 9px 9px 0;line-height:1.35;
+}
+
+/* ════ ROADMAP ════ */
+.rlist{list-style:none;display:flex;flex-direction:column;gap:6px}
+.rlist li{
+  display:flex;align-items:center;gap:8px;
+  font-size:.78rem;color:rgba(240,253,244,.72);
+}
+.rdot{width:8px;height:8px;border-radius:50%;border:2px solid #2dd4bf;flex-shrink:0}
+
+/* ════ FOOTER ════ */
+.footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:12px;margin-top:12px;
+  border-top:1px solid rgba(34,197,94,.18);gap:16px;flex-shrink:0;
+}
+.f-brand{display:flex;align-items:center;gap:9px}
+.f-sh{
+  width:38px;height:38px;border-radius:11px;font-size:20px;
+  background:linear-gradient(135deg,#22c55e,#0d9488);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 12px rgba(34,197,94,.4);
+}
+.f-name{
+  font-size:1.15rem;font-weight:900;
+  background:linear-gradient(90deg,#22c55e,#2dd4bf);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.f-motto{font-size:.82rem;color:rgba(134,239,172,.55);font-style:italic;flex:1;text-align:center}
+.f-gh{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.07);border:1px solid rgba(134,239,172,.25);
+  border-radius:9px;padding:6px 16px;
+  font-size:.75rem;font-weight:700;color:#86efac;text-decoration:none;
+}
+.f-dept{font-size:.68rem;color:rgba(134,239,172,.42);text-align:right;line-height:1.55}
+
+/* ════ PRINT ════ */
+@page{size:A2 landscape;margin:0}
+@media print{
+  html,body{overflow:visible;width:594mm;height:420mm;background:#020d04!important}
+  .scaler{position:static!important;transform:none!important}
+  .poster{width:594mm!important;height:420mm!important}
+}
+</style>
+</head>
+<body>
+
+<div class="scaler" id="scaler">
+<div class="poster">
+  <div class="orb o1"></div>
+  <div class="orb o2"></div>
+  <div class="orb o3"></div>
+
+  <!-- ══ HEADER ══ -->
+  <div class="hdr">
+    <div class="hdr-left">
+      <div class="shield">🛡️</div>
+      <div class="brand">
+        <h1>EcoGuardian</h1>
+        <div class="sub">🛰️ Environmental Governance Grid &amp; Real-time Incident Response</div>
+      </div>
+    </div>
+    <div class="hdr-meta">
+      <strong>Academic Project Poster</strong>
+      Department of Computer Science &amp; Engineering<br/>
+      Full-Stack Web Application &amp; AI Integration<br/>
+      April 2026
+    </div>
+  </div>
+
+  <!-- ══ OVERVIEW ══ -->
+  <div class="overview">
+    <span class="hl">EcoGuardian</span> is a state-of-the-art environmental monitoring platform that bridges the gap between
+    <span class="hl">concerned citizens</span>, <span class="hl">administrative oversight</span>, and <span class="hl">field authorities</span>.
+    Leveraging <span class="hl">real-time synchronization via Socket.io</span> and <span class="hl">Gemini 1.5 Flash AI</span>,
+    every environmental threat — from illegal logging to wildlife injuries — is tracked, triaged, and resolved with total transparency.
+  </div>
+
+  <!-- ══ STATS ══ -->
+  <div class="stats-row">
+    <div class="stat"><div class="sn">3</div><div class="sl">User Roles</div></div>
+    <div class="stat"><div class="sn">6</div><div class="sl">Incident Types</div></div>
+    <div class="stat"><div class="sn">4</div><div class="sl">Severity Levels</div></div>
+    <div class="stat"><div class="sn">8</div><div class="sl">Report Statuses</div></div>
+    <div class="stat"><div class="sn">AI</div><div class="sl">Gemini Powered</div></div>
+  </div>
+
+  <!-- ══ ROW 1: Problem | Features | Tech ══ -->
+  <div class="grid3">
+
+    <div class="card">
+      <div class="ct">Problem &amp; Solution</div>
+      <ul class="plist">
+        <li>❌ Environmental incidents go unnoticed due to fragmented systems</li>
+        <li>❌ Citizens lack a transparent channel to verify complaint resolution</li>
+        <li>❌ Authorities struggle to triage real vs. fake/spam reports</li>
+        <li>❌ No unified real-time coordination between all stakeholders</li>
+      </ul>
+      <div class="div"></div>
+      <ul class="plist">
+        <li>✅ Unified platform with role-based dashboards for all parties</li>
+        <li>✅ End-to-end transparent timeline from submission to resolution</li>
+        <li>✅ Gemini AI automatically flags suspicious and fake reports</li>
+        <li>✅ Live Socket.io push notifications keep everyone in sync</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="ct">Key Features</div>
+      <div class="fgrid">
+        <div class="fc"><span class="fe">🛰️</span><div><h4>Real-time Ops Center</h4><p>Live incident tracking with instant push notifications via Socket.io</p></div></div>
+        <div class="fc"><span class="fe">🧠</span><div><h4>AI Sentinel Insights</h4><p>Gemini 1.5 Flash analyses images and verifies report authenticity</p></div></div>
+        <div class="fc"><span class="fe">📸</span><div><h4>Evidence Protocol</h4><p>Authorities upload photo-of-resolution as visual proof to reporters</p></div></div>
+        <div class="fc"><span class="fe">💬</span><div><h4>Eco-Cloud Intercom</h4><p>Real-time peer-to-peer chat for on-ground field coordination</p></div></div>
+        <div class="fc"><span class="fe">🏆</span><div><h4>Gamified Leaderboard</h4><p>Points &amp; community rankings reward active environmental reporters</p></div></div>
+        <div class="fc"><span class="fe">☁️</span><div><h4>Offline Resilience</h4><p>Graceful fallback to in-memory storage if database is unreachable</p></div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct">Technology Stack</div>
+      <div class="lbl">Frontend</div>
+      <div class="chips" style="margin-bottom:6px">
+        <span class="chip cr">React 19</span><span class="chip cr">TypeScript</span>
+        <span class="chip cr">Vite 6</span><span class="chip cr">Framer Motion</span>
+        <span class="chip cr">Tailwind CSS 4</span><span class="chip cr">Lucide Icons</span>
+      </div>
+      <div class="lbl">Backend</div>
+      <div class="chips" style="margin-bottom:6px">
+        <span class="chip cn">Node.js</span><span class="chip cn">Express.js</span>
+        <span class="chip cs">Socket.io 4</span><span class="chip cm">MongoDB</span>
+        <span class="chip cm">Mongoose</span><span class="chip cr">TypeScript</span>
+      </div>
+      <div class="lbl">AI &amp; Services</div>
+      <div class="chips">
+        <span class="chip cg">Gemini 1.5 Flash</span>
+        <span class="chip cg">Google GenAI</span>
+        <span class="chip ctw">Twilio SMS</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ROW 2: Arch+Roles | Incidents+Status+Unique+Roadmap ══ -->
+  <div class="grid2">
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <!-- Architecture -->
+      <div class="card">
+        <div class="ct">System Architecture</div>
+        <div class="arch">
+          <div class="an"><span class="ae">🌐</span><span class="al">React<br/>Frontend</span></div>
+          <div class="aa">→</div>
+          <div class="an"><span class="ae">⚡</span><span class="al">Express<br/>REST API</span></div>
+          <div class="aa">→</div>
+          <div class="an"><span class="ae">🗄️</span><span class="al">MongoDB<br/>Database</span></div>
+          <div class="aa">→</div>
+          <div class="an"><span class="ae">🧠</span><span class="al">Gemini AI<br/>Service</span></div>
+          <div class="aa">→</div>
+          <div class="an"><span class="ae">🔔</span><span class="al">Socket.io<br/>Real-time</span></div>
+          <div class="aa">→</div>
+          <div class="an"><span class="ae">📲</span><span class="al">Twilio<br/>SMS</span></div>
+        </div>
+        <div class="aip">
+          <strong>🧠 AI Pipeline:</strong>&ensp;Image → Gemini classifies <strong>type &amp; severity</strong> &amp; recommends action ·
+          Report → AI returns <strong>isReal</strong>, <strong>confidence %</strong> &amp; analysis ·
+          AI generates inspiring <strong>community summaries</strong> for the dashboard
+        </div>
+      </div>
+      <!-- Roles -->
+      <div class="card">
+        <div class="ct">Tri-Role Architecture</div>
+        <div class="roles">
+          <div class="role rl-u">
+            <span class="re">👤</span>
+            <div><h4>Citizen (User)</h4>
+            <ul><li>Submit &amp; track environmental reports</li><li>Upload photo evidence with AI scan</li><li>Earn points · View leaderboard</li></ul></div>
+          </div>
+          <div class="role rl-a">
+            <span class="re">🔧</span>
+            <div><h4>Command (Admin)</h4>
+            <ul><li>AI authenticity verification of all reports</li><li>Assign incidents to field authority</li><li>Manage alerts &amp; broadcast announcements</li></ul></div>
+          </div>
+          <div class="role rl-f">
+            <span class="re">🚨</span>
+            <div><h4>Field Authority</h4>
+            <ul><li>Accept &amp; investigate assigned cases</li><li>Upload photo-of-resolution as proof</li><li>Real-time chat coordination</li></ul></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <!-- Incidents -->
+      <div class="card">
+        <div class="ct">Incident Types &amp; Severity</div>
+        <div class="ibadges">
+          <div class="ib">🌿 Land Damage</div>
+          <div class="ib">🪓 Illegal Logging</div>
+          <div class="ib">🐾 Injured Wildlife</div>
+          <div class="ib">🚗 Animal Road Accident</div>
+          <div class="ib">💧 Pollution</div>
+          <div class="ib">📋 Other</div>
+        </div>
+        <div class="sevrow">
+          <span class="sv sv-l">🟢 Low</span>
+          <span class="sv sv-m">🟡 Medium</span>
+          <span class="sv sv-h">🟠 High</span>
+          <span class="sv sv-c">🔴 Critical</span>
+        </div>
+      </div>
+      <!-- Lifecycle -->
+      <div class="card">
+        <div class="ct">Report Lifecycle</div>
+        <div class="lf">
+          <span class="ls">📥 Pending</span><span class="la">→</span>
+          <span class="ls">✅ Verified</span><span class="la">→</span>
+          <span class="ls">📋 Assigned</span><span class="la">→</span>
+          <span class="ls">🔍 Investigating</span><span class="la">→</span>
+          <span class="ls">📸 Solved</span><span class="la">→</span>
+          <span class="ls">🏁 Resolved</span>
+          <span style="font-size:.7rem;color:rgba(240,253,244,.32);margin:0 4px">or</span>
+          <span class="ls ls-r">🚫 Rejected</span>
+        </div>
+      </div>
+      <!-- Unique -->
+      <div class="card">
+        <div class="ct">Why EcoGuardian Stands Out</div>
+        <ul class="ulist">
+          <li>🧠 AI image classification + fake-report detection using Gemini 1.5 Flash</li>
+          <li>📸 Photo-of-Resolution — visual proof for every resolved case</li>
+          <li>⚡ Full real-time stack — every status change pushed instantly to all dashboards</li>
+          <li>🏆 Gamification rewards citizens with points for each verified report</li>
+          <li>☁️ Demo Mode — runs completely offline, ideal for presentations</li>
+        </ul>
+      </div>
+      <!-- Roadmap -->
+      <div class="card">
+        <div class="ct">Future Roadmap</div>
+        <ul class="rlist">
+          <li><div class="rdot"></div>Predictive Anomaly Heatmaps with ML trend forecasting</li>
+          <li><div class="rdot"></div>Direct NGO Integration for immediate wildlife rescue dispatch</li>
+          <li><div class="rdot"></div>Exportable Environmental Governance PDF Reports</li>
+          <li><div class="rdot"></div>Mobile application (React Native) for field authorities</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ FOOTER ══ -->
+  <div class="footer">
+    <div class="f-brand">
+      <div class="f-sh">🛡️</div>
+      <span class="f-name">EcoGuardian</span>
+    </div>
+    <p class="f-motto">🌍 "Built with ❤️ for a Greener Future"</p>
+    <a class="f-gh" href="https://github.com/bhaskar-mb/ecoguard" target="_blank">⭐ github.com/bhaskar-mb/ecoguard</a>
+    <div class="f-dept">Full-Stack · AI-Powered · Real-time<br/>React · Node.js · MongoDB · Gemini AI</div>
+  </div>
+
+</div><!-- /poster -->
+</div><!-- /scaler -->
+
+<script>
+(function(){
+  var W=1587,H=1122;
+  function fit(){
+    var s=document.getElementById('scaler');
+    var sc=Math.min(window.innerWidth/W,window.innerHeight/H)*0.99;
+    s.style.transform='translate(-50%,-50%) scale('+sc+')';
+  }
+  fit();
+  window.addEventListener('resize',fit);
+})();
+</script>
+</body>
+</html>

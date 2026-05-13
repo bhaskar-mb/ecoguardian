@@ -63,10 +63,20 @@ const ReportWizard: React.FC<ReportWizardProps> = ({ onComplete }) => {
     }
   };
 
+  const [manualType, setManualType] = useState<IncidentType>(IncidentType.OTHER);
+  const [manualSeverity, setManualSeverity] = useState<Severity>(Severity.MEDIUM);
+
+  useEffect(() => {
+    if (analysis) {
+      setManualType(analysis.detectedType);
+      setManualSeverity(analysis.severity);
+    }
+  }, [analysis]);
+
   const handleSubmit = () => {
     onComplete({
-      type: analysis?.detectedType || IncidentType.OTHER,
-      severity: analysis?.severity || Severity.MEDIUM,
+      type: manualType,
+      severity: manualSeverity,
       description: description || analysis?.explanation || '',
       imageUrl: image || undefined,
       aiInsights: analysis?.explanation,
@@ -83,18 +93,18 @@ const ReportWizard: React.FC<ReportWizardProps> = ({ onComplete }) => {
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="bg-white rounded-[2rem] sm:rounded-[3rem] p-5 sm:p-8 shadow-2xl w-full max-w-md mx-auto border border-indigo-100 relative overflow-hidden"
+      className="bg-white/80 backdrop-blur-2xl rounded-[1.5rem] sm:rounded-[2.5rem] p-4 sm:p-6 shadow-2xl w-full max-w-sm mx-auto border border-white/50 relative overflow-hidden"
     >
       <div className="absolute top-0 left-0 w-full h-1 bg-slate-50" />
       
-      <div className="flex items-center gap-1.5 sm:gap-3 mb-6 sm:mb-10 relative z-10">
+      <div className="flex items-center gap-1.5 sm:gap-2 mb-5 sm:mb-6 relative z-10">
         {[1, 2, 3].map((s) => (
-          <div key={s} className="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+          <div key={s} className="flex-1 h-1 rounded-full bg-slate-100 overflow-hidden">
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: step >= s ? '100%' : '0%' }}
               transition={{ duration: 0.8, ease: "circOut" }}
-              className="h-full bg-indigo-500" 
+              className="h-full bg-gradient-to-r from-teal-500 to-emerald-500" 
             />
           </div>
         ))}
@@ -107,18 +117,18 @@ const ReportWizard: React.FC<ReportWizardProps> = ({ onComplete }) => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="text-center py-4 sm:py-6"
+            className="text-center py-2 sm:py-4"
           >
-            <div className="relative group cursor-pointer mb-6 sm:mb-8" onClick={() => fileInputRef.current?.click()}>
-              <div className="absolute -inset-4 bg-indigo-50 rounded-[2.5rem] sm:rounded-[3rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <div className="relative w-24 h-24 sm:w-28 sm:h-28 border-2 border-dashed border-indigo-200 bg-indigo-50/30 rounded-[2rem] sm:rounded-[2.5rem] flex flex-col items-center justify-center mx-auto text-indigo-600 transition-all group-hover:border-indigo-400 group-hover:scale-105">
-                <Camera className="w-8 h-8 sm:w-10 sm:h-10 mb-1 sm:mb-2" />
-                <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest opacity-60">Drop Image</span>
+            <div className="relative group cursor-pointer mb-5 sm:mb-6" onClick={() => fileInputRef.current?.click()}>
+              <div className="absolute -inset-4 bg-emerald-50/50 rounded-[2rem] sm:rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl" />
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 border-2 border-dashed border-emerald-300 bg-white/50 backdrop-blur-sm rounded-[1.5rem] sm:rounded-[2rem] flex flex-col items-center justify-center mx-auto text-emerald-600 transition-all group-hover:border-emerald-500 group-hover:scale-105 shadow-sm">
+                <Camera className="w-6 h-6 sm:w-8 sm:h-8 mb-1" />
+                <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest opacity-60">Drop Image</span>
               </div>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-black mb-2 sm:mb-3 tracking-tight text-slate-900">Capture Evidence</h2>
-            <p className="text-slate-500 mb-6 sm:mb-10 font-medium text-xs sm:text-sm max-w-[260px] sm:max-w-xs mx-auto leading-relaxed">
+            <h2 className="text-xl sm:text-2xl font-black mb-2 tracking-tight text-slate-900">Capture Evidence</h2>
+            <p className="text-slate-500 mb-6 sm:mb-8 font-medium text-[11px] sm:text-xs max-w-[260px] mx-auto leading-relaxed">
               Upload a clear photo of the environmental incident for AI analysis.
             </p>
 
@@ -126,7 +136,7 @@ const ReportWizard: React.FC<ReportWizardProps> = ({ onComplete }) => {
             
             <button 
               onClick={() => fileInputRef.current?.click()} 
-              className="w-full bg-indigo-600 text-white font-black py-4 sm:py-5 rounded-xl sm:rounded-2xl shadow-xl shadow-indigo-200 hover:bg-indigo-700 transition-all text-xs sm:text-sm flex items-center justify-center gap-2 sm:gap-3 group"
+              className="w-full bg-gradient-to-r from-teal-500 to-emerald-500 text-white font-black py-3 sm:py-4 rounded-xl sm:rounded-2xl shadow-xl shadow-teal-500/20 hover:shadow-teal-500/40 hover:scale-[1.02] transition-all text-xs flex items-center justify-center gap-2 group"
             >
               <Upload className="w-4 h-4 sm:w-5 sm:h-5 group-hover:-translate-y-1 transition-transform" />
               Select Media
@@ -148,11 +158,11 @@ const ReportWizard: React.FC<ReportWizardProps> = ({ onComplete }) => {
             exit={{ opacity: 0, x: -20 }}
             className="text-center"
           >
-            <div className="relative mb-6 sm:mb-8">
-              <img src={image} className="w-full aspect-square object-cover rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl" alt="Evidence" />
-              <div className="absolute inset-0 rounded-[2rem] sm:rounded-[2.5rem] border-4 border-white/20 pointer-events-none" />
+            <div className="relative mb-5 sm:mb-6">
+              <img src={image} className="w-full aspect-square object-cover rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl" alt="Evidence" />
+              <div className="absolute inset-0 rounded-[1.5rem] sm:rounded-[2rem] border-4 border-white/20 pointer-events-none" />
               {analyzing && (
-                <div className="absolute inset-0 bg-indigo-900/40 backdrop-blur-sm rounded-[2rem] sm:rounded-[2.5rem] flex items-center justify-center">
+                <div className="absolute inset-0 bg-teal-900/40 backdrop-blur-md rounded-[2rem] sm:rounded-[2.5rem] flex items-center justify-center">
                   <div className="flex flex-col items-center gap-4">
                     <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin" />
                     <p className="text-white font-black uppercase tracking-widest text-[10px]">Neural Scan Active</p>
@@ -161,17 +171,17 @@ const ReportWizard: React.FC<ReportWizardProps> = ({ onComplete }) => {
               )}
             </div>
 
-            <div className="flex items-center justify-center gap-3 mb-6 sm:mb-8">
-              <div className="h-px w-6 bg-slate-100" />
-              <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">Vision Analysis</h2>
-              <div className="h-px w-6 bg-slate-100" />
+            <div className="flex items-center justify-center gap-3 mb-5 sm:mb-6">
+              <div className="h-px w-6 bg-slate-200" />
+              <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">Vision Analysis</h2>
+              <div className="h-px w-6 bg-slate-200" />
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button 
                 disabled={analyzing} 
                 onClick={handleStartAnalysis} 
-                className="flex-[2] bg-indigo-600 text-white font-black py-4 sm:py-5 rounded-xl sm:rounded-2xl shadow-xl shadow-indigo-200 hover:bg-indigo-700 disabled:opacity-50 transition-all text-xs sm:text-sm flex items-center justify-center gap-2"
+                className="flex-[2] bg-gradient-to-r from-teal-500 to-emerald-500 text-white font-black py-3 sm:py-4 rounded-xl sm:rounded-2xl shadow-xl shadow-teal-500/20 hover:scale-[1.02] disabled:opacity-50 transition-all text-xs flex items-center justify-center gap-2"
               >
                 <Search className="w-4 h-4" />
                 {analyzing ? "Synthesizing..." : "Run AI Scan"}
@@ -179,7 +189,7 @@ const ReportWizard: React.FC<ReportWizardProps> = ({ onComplete }) => {
               <button 
                 disabled={analyzing} 
                 onClick={() => setStep(3)} 
-                className="flex-1 border-2 border-slate-100 font-black py-4 sm:py-5 rounded-2xl sm:rounded-3xl text-slate-400 hover:bg-slate-50 transition-all text-sm sm:text-base"
+                className="flex-1 border-2 border-white/50 bg-white/20 font-black py-3 sm:py-4 rounded-xl sm:rounded-2xl text-slate-600 hover:bg-white/40 transition-all text-xs"
               >
                 Skip
               </button>
@@ -192,9 +202,9 @@ const ReportWizard: React.FC<ReportWizardProps> = ({ onComplete }) => {
             key="step3"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="space-y-6 sm:space-y-8"
+            className="space-y-4 sm:space-y-5"
           >
-            <div className="bg-slate-50 p-5 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] border border-slate-100 relative overflow-hidden">
+            <div className="bg-white/60 backdrop-blur-md p-4 sm:p-5 rounded-[1.25rem] border border-white/60 relative overflow-hidden shadow-sm">
                 <div className="absolute top-0 right-0 p-3 opacity-10">
                   <MapPin className="w-10 h-10" />
                 </div>
@@ -205,24 +215,37 @@ const ReportWizard: React.FC<ReportWizardProps> = ({ onComplete }) => {
                     value={manualAddress} 
                     onChange={(e) => setManualAddress(e.target.value)}
                     placeholder="Detecting site address..."
-                    className="w-full bg-white border-2 border-slate-100 rounded-xl px-3 py-3 sm:py-4 text-xs sm:text-sm font-black text-slate-800 outline-none focus:border-indigo-500/30 transition-all"
+                    className="w-full bg-white/80 border-2 border-white/50 rounded-xl px-3 py-3 text-xs font-black text-slate-800 outline-none focus:border-teal-500/50 transition-all"
                   />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-               <div className="p-4 sm:p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                  <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 sm:mb-2">Detected Type</p>
-                  <p className="text-xs font-black text-slate-900 flex items-center gap-2">
-                    <CheckCircle2 className="w-3 h-3 text-indigo-500" />
-                    {analysis?.detectedType || 'Other'}
-                  </p>
+               <div className="p-4 sm:p-5 bg-white/60 backdrop-blur-md rounded-2xl border border-white/60 shadow-sm">
+                  <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest mb-1 sm:mb-2 text-teal-600">Detected Type</p>
+                  <select 
+                    value={manualType} 
+                    onChange={(e) => setManualType(e.target.value as IncidentType)}
+                    className="w-full bg-transparent border-none text-xs font-black text-slate-900 outline-none cursor-pointer"
+                  >
+                    {Object.values(IncidentType).map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
                </div>
-               <div className="p-4 sm:p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                  <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 sm:mb-2">Severity Level</p>
+               <div className="p-4 sm:p-5 bg-white/60 backdrop-blur-md rounded-2xl border border-white/60 shadow-sm">
+                  <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest mb-1 sm:mb-2 text-teal-600">Severity Level</p>
                   <div className="flex items-center gap-2">
-                    <div className={`w-1.5 h-1.5 rounded-full ${analysis?.severity === Severity.HIGH ? 'bg-red-500' : 'bg-amber-500'}`} />
-                    <p className="text-xs font-black text-slate-900">{analysis?.severity || 'Medium'}</p>
+                    <div className={`w-1.5 h-1.5 rounded-full ${manualSeverity === Severity.HIGH || manualSeverity === Severity.CRITICAL ? 'bg-red-500' : manualSeverity === Severity.MEDIUM ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                    <select 
+                      value={manualSeverity} 
+                      onChange={(e) => setManualSeverity(e.target.value as Severity)}
+                      className="w-full bg-transparent border-none text-xs font-black text-slate-900 outline-none cursor-pointer"
+                    >
+                      {Object.values(Severity).map(sev => (
+                        <option key={sev} value={sev}>{sev}</option>
+                      ))}
+                    </select>
                   </div>
                </div>
             </div>
@@ -232,13 +255,13 @@ const ReportWizard: React.FC<ReportWizardProps> = ({ onComplete }) => {
                 value={description} 
                 onChange={(e) => setDescription(e.target.value)} 
                 placeholder="Detailed field observations..." 
-                className="w-full bg-slate-50 border border-slate-100 rounded-[1.5rem] p-5 sm:p-6 font-bold text-xs sm:text-sm text-slate-900 outline-none min-h-[100px] sm:min-h-[120px] focus:bg-white focus:border-indigo-500/20 transition-all" 
+                className="w-full bg-white/60 backdrop-blur-md border border-white/50 rounded-[1.25rem] p-4 font-bold text-[11px] sm:text-xs text-slate-900 outline-none min-h-[80px] sm:min-h-[100px] focus:bg-white/80 focus:border-teal-500/50 shadow-sm transition-all"
               />
             </div>
 
             <button 
               onClick={handleSubmit} 
-              className="w-full bg-indigo-600 text-white font-black py-4 sm:py-5 rounded-[1.5rem] sm:rounded-[2rem] shadow-2xl shadow-indigo-900/20 hover:bg-indigo-700 transition-all text-xs sm:text-sm flex items-center justify-center gap-3"
+              className="w-full bg-gradient-to-r from-teal-500 to-emerald-500 text-white font-black py-3 sm:py-4 rounded-[1.25rem] shadow-xl shadow-teal-600/20 hover:scale-[1.02] transition-all text-xs flex items-center justify-center gap-2"
             >
               <Shield className="w-4 h-4" />
               Finalize Sentinel Report
