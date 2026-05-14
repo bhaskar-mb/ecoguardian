@@ -45,7 +45,7 @@ reportSchema.pre('save', async function() {
   if (this.isNew || !this.reportNumber) {
     try {
       const ReportModel = mongoose.model('Report');
-      const lastReport = await ReportModel.findOne({}, {}, { sort: { 'reportNumber': -1 } });
+      const lastReport: any = await ReportModel.findOne({}, {}, { sort: { 'reportNumber': -1 } });
       const nextNum = (lastReport && lastReport.reportNumber) ? lastReport.reportNumber + 1 : 1;
       this.reportNumber = nextNum;
     } catch (err) {
