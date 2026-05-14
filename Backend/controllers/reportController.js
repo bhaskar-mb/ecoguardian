@@ -1,4 +1,5 @@
 import Report from '../../Database/models/Report.js';
+import { sendAdminReportNotification } from '../services/mailService.js';
 
 let MOCK_REPORTS = [
   {
@@ -61,6 +62,7 @@ export const createReport = async (req, res) => {
       savedReport = await newReport.save();
     }
     req.app.get('io').emit('newReport', savedReport);
+    sendAdminReportNotification(savedReport).catch(err => console.error('Email failed:', err));
     res.status(201).json(savedReport);
   } catch (error) {
     console.error("POST reports error:", error);
